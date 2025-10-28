@@ -1,4 +1,5 @@
 import React from 'react';
+const API_BASE = (import.meta.env.VITE_API_BASE as string) || '';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +26,7 @@ export default function ProfilePage() {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      const res = await fetch('/api/auth/me', {
+      const res = await fetch(`${API_BASE}/api/auth/me`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

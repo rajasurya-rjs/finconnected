@@ -1,5 +1,8 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Base API URL — set this in Vercel as VITE_API_BASE (e.g. https://finconnected.onrender.com)
+const API_BASE = (import.meta.env.VITE_API_BASE as string) || '';
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -17,7 +20,7 @@ export async function apiRequest(
   if (data) headers['Content-Type'] = 'application/json';
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE}${url}`, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -35,11 +38,11 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(queryKey.join("/") as string, { headers, credentials: 'include' });
+  const res = await fetch(`${API_BASE}${queryKey.join("/")}` as string, { headers, credentials: 'include' });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;

@@ -98,7 +98,7 @@ function Router() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <a href="/api/logout" className="cursor-pointer" data-testid="link-logout">
+                    <a href={`${(import.meta.env.VITE_API_BASE as string) || ''}/api/logout`} className="cursor-pointer" data-testid="link-logout">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </a>

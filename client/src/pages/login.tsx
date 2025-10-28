@@ -1,4 +1,5 @@
 import React from 'react';
+const API_BASE = (import.meta.env.VITE_API_BASE as string) || '';
 import { useLocation } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

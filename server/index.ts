@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
+import cors from 'cors';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -47,8 +48,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// CORS: allow frontend origin to send credentials (cookies)
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.VITE_API_BASE || 'http://localhost:5173';
+app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+// handle preflight for all routes
+app.options('*', cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+
 (async () => {
   const server = await registerRoutes(app);
+
+  // Health endpoint for Render / load balancers
+  app.get('/api/health', (_req, res) => {
+    res.json({ ok: true, env: process.env.NODE_ENV || 'development' });
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
