@@ -82,14 +82,14 @@ export default function Transactions() {
       form.reset();
     },
     onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
+        if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
@@ -232,6 +232,7 @@ export default function Transactions() {
                           className="resize-none"
                           data-testid="input-description"
                           {...field}
+                          value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -246,7 +247,7 @@ export default function Transactions() {
                     <FormItem>
                       <FormLabel>Date</FormLabel>
                       <FormControl>
-                        <Input type="date" data-testid="input-date" {...field} />
+                        <Input type="date" data-testid="input-date" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

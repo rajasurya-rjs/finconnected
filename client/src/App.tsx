@@ -20,7 +20,10 @@ import { LogOut, User } from "lucide-react";
 
 // Pages
 import Landing from "@/pages/landing";
+import Login from "@/pages/login";
+import Signup from "@/pages/signup";
 import Dashboard from "@/pages/dashboard";
+import Profile from "@/pages/profile";
 import Transactions from "@/pages/transactions";
 import Budget from "@/pages/budget";
 import Savings from "@/pages/savings";
@@ -34,6 +37,8 @@ function Router() {
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
+        <Route path="/login" component={Login} />
+        <Route path="/signup" component={Signup} />
         <Route path="/" component={Landing} />
         <Route component={NotFound} />
       </Switch>
@@ -82,12 +87,14 @@ function Router() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                  <DropdownMenuItem asChild>
+                    <a href="/profile" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </a>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -105,6 +112,7 @@ function Router() {
             <div className="container max-w-7xl mx-auto px-4 md:px-8 py-8">
               <Switch>
                 <Route path="/" component={Dashboard} />
+                <Route path="/profile" component={Profile} />
                 <Route path="/transactions" component={Transactions} />
                 <Route path="/budget" component={Budget} />
                 <Route path="/savings" component={Savings} />

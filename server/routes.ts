@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { authenticateJWT, signJwt, loginOrCreateUserByEmail } from "./jwtAuth";
 import {
   insertTransactionSchema,
   insertBudgetSchema,
@@ -9,25 +9,113 @@ import {
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // JWT auth routes
+  // POST /api/auth/login
+  // Body: { email, firstName?, lastName?, profileImageUrl? }
+  app.post('/api/auth/login', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ message: 'Email is required' });
+        return;
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        res.status(401).json({ message: 'Account not found. Please sign up first.' });
+        return;
+      }
+
+      const token = signJwt({ userId: user.id });
+
+      // Set httpOnly cookie for secure, cookie-based auth fallback
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax' as const,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+      };
+      res.cookie('token', token, cookieOptions);
+
+      res.json({ token, user });
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      console.error('Error in login:', error);
+      res.status(500).json({ message: 'Failed to login' });
     }
   });
 
-  // Transaction routes
-  app.get("/api/transactions", isAuthenticated, async (req: any, res) => {
+  // POST /api/auth/signup - explicit signup route
+  app.post('/api/auth/signup', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const { email, firstName, lastName, profileImageUrl } = req.body;
+      if (!email) {
+        res.status(400).json({ message: 'Email is required' });
+        return;
+      }
+
+      // upsertUser will create or update. This keeps signup simple for this example.
+      const user = await storage.upsertUser({ email, firstName, lastName, profileImageUrl });
+      const token = signJwt({ userId: user.id });
+
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax' as const,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+      };
+      res.cookie('token', token, cookieOptions);
+
+      res.status(201).json({ token, user });
+    } catch (error) {
+      console.error('Error in signup:', error);
+      res.status(500).json({ message: 'Failed to signup' });
+    }
+  });
+
+  // GET /api/auth/me
+  app.get('/api/auth/me', authenticateJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      res.status(500).json({ message: 'Failed to fetch user' });
+    }
+  });
+
+  // PATCH /api/auth/me - update current user profile
+  app.patch('/api/auth/me', authenticateJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { firstName, lastName, profileImageUrl } = req.body;
+      const updated = await storage.upsertUser({ id: userId, firstName, lastName, profileImageUrl });
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      res.status(500).json({ message: 'Failed to update profile' });
+    }
+  });
+
+  // Redirect to client SPA login route so styles and layout apply
+  app.get('/api/login', (_req, res) => {
+    res.redirect('/login');
+  });
+
+  app.get('/api/logout', (req, res) => {
+    // Clear cookie and instruct client to clear token from localStorage
+    res.clearCookie('token', { path: '/' });
+    const html = `<!doctype html><html><body><script>localStorage.removeItem('token');window.location='/'</script></body></html>`;
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  });
+
+  // Transaction routes
+  app.get("/api/transactions", authenticateJWT, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
       const transactions = await storage.getTransactions(userId);
       res.json(transactions);
     } catch (error) {
@@ -36,9 +124,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/transactions", isAuthenticated, async (req: any, res) => {
+  app.post("/api/transactions", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertTransactionSchema.parse(req.body);
       const transaction = await storage.createTransaction(validatedData, userId);
       res.status(201).json(transaction);
@@ -52,9 +140,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/transactions/:id", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const validatedData = insertTransactionSchema.partial().parse(req.body);
       const transaction = await storage.updateTransaction(id, validatedData, userId);
@@ -73,9 +161,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/transactions/:id", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const deleted = await storage.deleteTransaction(id, userId);
       if (!deleted) {
@@ -90,9 +178,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Budget routes
-  app.get("/api/budgets", isAuthenticated, async (req: any, res) => {
+  app.get("/api/budgets", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const month = req.query.month as string || new Date().toISOString().slice(0, 7);
       const budgets = await storage.getBudgets(userId, month);
       res.json(budgets);
@@ -102,9 +190,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/budgets", isAuthenticated, async (req: any, res) => {
+  app.post("/api/budgets", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertBudgetSchema.parse(req.body);
       const budget = await storage.createBudget(validatedData, userId);
       res.status(201).json(budget);
@@ -118,9 +206,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/budgets/:id", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/budgets/:id", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const validatedData = insertBudgetSchema.partial().parse(req.body);
       const budget = await storage.updateBudget(id, validatedData, userId);
@@ -139,9 +227,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/budgets/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/budgets/:id", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const deleted = await storage.deleteBudget(id, userId);
       if (!deleted) {
@@ -156,9 +244,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Savings goal routes
-  app.get("/api/savings-goals", isAuthenticated, async (req: any, res) => {
+  app.get("/api/savings-goals", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const goals = await storage.getSavingsGoals(userId);
       res.json(goals);
     } catch (error) {
@@ -167,9 +255,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/savings-goals", isAuthenticated, async (req: any, res) => {
+  app.post("/api/savings-goals", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertSavingsGoalSchema.parse(req.body);
       const goal = await storage.createSavingsGoal(validatedData, userId);
       res.status(201).json(goal);
@@ -183,9 +271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/savings-goals/:id", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/savings-goals/:id", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const validatedData = insertSavingsGoalSchema.partial().parse(req.body);
       const goal = await storage.updateSavingsGoal(id, validatedData, userId);
@@ -204,9 +292,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/savings-goals/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/savings-goals/:id", authenticateJWT, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const deleted = await storage.deleteSavingsGoal(id, userId);
       if (!deleted) {

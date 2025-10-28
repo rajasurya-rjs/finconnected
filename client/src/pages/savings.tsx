@@ -79,7 +79,7 @@ export default function Savings() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/login";
         }, 500);
         return;
       }
@@ -212,6 +212,7 @@ export default function Savings() {
                           type="date"
                           data-testid="input-date"
                           {...field}
+                          value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormMessage />

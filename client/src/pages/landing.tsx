@@ -36,7 +36,7 @@ export default function Landing() {
               asChild
               data-testid="button-get-started"
             >
-              <a href="/api/login">
+              <a href="/login">
                 Start Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </a>
@@ -359,7 +359,7 @@ export default function Landing() {
             asChild
             data-testid="button-cta-signup"
           >
-            <a href="/api/login">
+            <a href="/login">
               Get Started Free
               <ArrowRight className="ml-2 h-5 w-5" />
             </a>

@@ -81,17 +81,17 @@ export default function BudgetPlanner() {
       form.reset();
     },
     onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
+        if (isUnauthorizedError(error)) {
+          toast({
+            title: "Unauthorized",
+            description: "You are logged out. Logging in again...",
+            variant: "destructive",
+          });
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 500);
+          return;
+        }
       toast({
         title: "Error",
         description: "Failed to create budget. Please try again.",
