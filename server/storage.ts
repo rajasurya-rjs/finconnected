@@ -64,13 +64,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    const { email, firstName, lastName, profileImageUrl } = userData as UpsertUser;
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values({ email, firstName, lastName, profileImageUrl })
       .onConflictDoUpdate({
-        target: users.id,
+        target: users.email,
         set: {
-          ...userData,
+          firstName,
+          lastName,
+          profileImageUrl,
           updatedAt: new Date(),
         },
       })
