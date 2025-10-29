@@ -48,11 +48,36 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS: allow frontend origin to send credentials (cookies)
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.VITE_API_BASE || 'http://localhost:5173';
-app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+// CORS: allow frontend origins to send credentials (cookies)
+const FRONTEND_ORIGINS = [
+  'https://finconnected.vercel.app',
+  'http://localhost:5173',
+  process.env.FRONTEND_ORIGIN,
+  process.env.VITE_API_BASE
+].filter(Boolean);
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    if (!origin || FRONTEND_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  }, 
+  credentials: true 
+}));
+
 // handle preflight for all routes
-app.options('*', cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+app.options('*', cors({ 
+  origin: (origin, callback) => {
+    if (!origin || FRONTEND_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  }, 
+  credentials: true 
+}));
 
 (async () => {
   const server = await registerRoutes(app);
