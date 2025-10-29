@@ -179,11 +179,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Budget routes
-  // Support both /api/budgets and /api/budgets/:month
-  app.get("/api/budgets/:month?", authenticateJWT, async (req: any, res) => {
+  app.get("/api/budgets", authenticateJWT, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const month = (req.params.month as string) || (req.query.month as string) || new Date().toISOString().slice(0, 7);
+      const month = req.query.month as string || new Date().toISOString().slice(0, 7);
       const budgets = await storage.getBudgets(userId, month);
       res.json(budgets);
     } catch (error) {

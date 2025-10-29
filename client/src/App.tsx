@@ -34,16 +34,6 @@ import NotFound from "@/pages/not-found";
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
-  async function handleLogout() {
-    try {
-      await fetch(`/api/logout`, { method: 'GET', credentials: 'include' });
-    } catch {}
-    try { localStorage.removeItem('token'); } catch {}
-    // Clear all cached queries, especially /api/auth/me so we don't show stale user
-    queryClient.clear();
-    window.location.href = '/login';
-  }
-
   if (isLoading || !isAuthenticated) {
     return (
       <Switch>
@@ -108,10 +98,10 @@ function Router() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <button onClick={handleLogout} className="cursor-pointer" data-testid="link-logout">
+                    <a href={`${(import.meta.env.VITE_API_BASE as string) || ''}/api/logout`} className="cursor-pointer" data-testid="link-logout">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
-                    </button>
+                    </a>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
