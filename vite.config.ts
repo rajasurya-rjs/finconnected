@@ -52,12 +52,10 @@ export default defineConfig({
             if (id.match(/node_modules.*(recharts|d3|chart.js|victory|highcharts)/)) {
               return 'charts-vendor';
             }
-            if (id.match(/node_modules.*(react|react-dom)/)) {
-              return 'react-vendor';
-            }
             if (id.match(/node_modules.*(@tanstack|@tanstack\/react-query|@tanstack\/query)/)) {
               return 'query-vendor';
             }
+            // Keep React and ReactDOM in the main vendor chunk
             return 'vendor';
           }
         }
