@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { authenticateJWT, signJwt, loginOrCreateUserByEmail } from "./jwtAuth";
+import { storage } from "./storage.js";
+import { authenticateJWT, signJwt, loginOrCreateUserByEmail } from "./jwtAuth.js";
 import {
   insertTransactionSchema,
   insertBudgetSchema,

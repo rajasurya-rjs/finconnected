@@ -15,7 +15,7 @@ import {
   type FinancialTip,
   type InsertFinancialTip,
 } from "@shared/schema";
-import { db } from "./db";
+import { db } from "./db.js";
 import { eq, and, desc } from "drizzle-orm";
 
 // Interface for storage operations
