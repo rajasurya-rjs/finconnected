@@ -7,6 +7,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 // bundle visualizer is loaded inline in plugins only when ANALYZE_BUNDLE is true
 
 export default defineConfig({
+  base: './', // Ensure assets are loaded relative to index.html
   plugins: [
     react(),
     runtimeErrorOverlay(),
@@ -40,6 +41,10 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Ensure proper module output
+    modulePreload: {
+      polyfill: true
+    },
     rollupOptions: {
       output: {
         manualChunks(id: string) {
