@@ -49,9 +49,11 @@ app.use((req, res, next) => {
 });
 
 // CORS: allow frontend origins to send credentials (cookies)
+const vercelOrigin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined;
 const FRONTEND_ORIGINS = [
   'https://finconnected.vercel.app',
   'http://localhost:5173',
+  vercelOrigin,
   process.env.FRONTEND_ORIGIN,
   process.env.VITE_API_BASE
 ].filter(Boolean);
