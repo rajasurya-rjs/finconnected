@@ -6,7 +6,7 @@ import {
   insertTransactionSchema,
   insertBudgetSchema,
   insertSavingsGoalSchema,
-} from "@shared/schema";
+} from "../shared/schema.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // JWT auth routes

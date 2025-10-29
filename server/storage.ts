@@ -14,7 +14,7 @@ import {
   type InsertSavingsGoal,
   type FinancialTip,
   type InsertFinancialTip,
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { db } from "./db.js";
 import { eq, and, desc } from "drizzle-orm";
 
