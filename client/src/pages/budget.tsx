@@ -72,7 +72,7 @@ export default function BudgetPlanner() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/budgets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/budgets", currentMonth] });
       toast({
         title: "Success",
         description: "Budget created successfully",
