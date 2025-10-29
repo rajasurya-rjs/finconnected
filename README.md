@@ -3,7 +3,7 @@
 A full‑stack, type‑safe personal finance app for young professionals and students. Track transactions, set monthly budgets, plan savings goals, learn financial tips, and use handy calculators — all in a modern, responsive UI.
 
 ## Demo
-- Deployed on Vercel: https://<your-vercel-domain>
+- Deployed on Vercel: https://finconnected-u6wj.vercel.app/
 
 ## Features
 - Auth and Profile
